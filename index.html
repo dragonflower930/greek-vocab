@@ -80,7 +80,11 @@ tr.hl td{background:var(--hl)}
 .ck.on{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
 .typing .dock{display:none}
 .starmode .dock{display:none}
+#scrollToggle{position:fixed;left:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:11;width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;color:var(--ink2);background:var(--surface);border:1px solid var(--line2);border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.15);cursor:pointer}
+#scrollToggle svg{width:20px;height:20px}
+.typing #scrollToggle,.starmode #scrollToggle{display:none}
 </style>
+<script data-goatcounter="https://greek-vocab.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 <main class="wrap">
@@ -151,6 +155,7 @@ tr.hl td{background:var(--hl)}
 </table>
 </div>
 </div>
+<button id="scrollToggle" type="button" aria-label="맨 아래로 이동"></button>
 <div class="dock" role="toolbar" aria-label="체크 되돌리기">
 <div class="in">
 <p class="cap" id="cap"></p>
@@ -398,8 +403,12 @@ var starOpen=false;
 // v1.1.0 (2026-09-23) - 별표 단어장에 '외움' 체크 버튼 추가했다가, 복습 흐름에 방해된다고 판단해 같은 날 롤백
 // v1.2.0 (2026-09-23) - 과 선택 칩을 드래그로 여러 개 한 번에 선택/해제 가능하도록 변경 (포인터 이벤트 기반)
 // v1.2.1 (2026-09-23) - 드래그 선택을 '지나간 칸만'에서 '시작~현재 사이 전체 범위'로 변경 (대각선으로 그어도 사이 과 전부 선택)
-// v1.2.2 (2026-09-28) - '외운 단어 보기' 목록은 '별표 숨김' 설정과 무관하게 항상 별표 상태를 표시하도록 수정
-var VERSION="v1.2.2";
+// v1.2.2 (2026-09-28) - '외운 단어 보기' 목록에 항상 별표 상태를 표시하도록 했다가, 사용자 요청으로 원복(별표 숨김 설정을 그대로 따르도록)
+// v1.3.0 (2026-09-28) - '★만' 필터를 '외운 단어 보기' 목록에도 동일하게 적용 (메인 화면과 일관되게 동작)
+// v1.4.0 (2026-09-29) - 맨 위/맨 아래로 스크롤하는 토글 버튼 추가 (스크롤 위치에 따라 방향 자동 전환)
+// v1.4.1 (2026-09-29) - 스크롤 토글 버튼을 화면 오른쪽에서 왼쪽으로 이동
+// v1.5.0 (2026-10-02) - GoatCounter 방문자 통계 스크립트 추가 (관리자만 goatcounter.com 로그인으로 확인, 사용자 경험에는 영향 없음)
+var VERSION="v1.5.0";
 var stars=new Set();
 var hardOnly=false;
 var hideStars=false;
@@ -410,6 +419,8 @@ var sel=new Set(lessons);
 var memOpen=false;
 var canSave=true;
 var CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+var ARROW_UP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+var ARROW_DOWN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
 function validNo(v){return typeof v==="number"&&byNo[v]!==undefined;}
 function uniq(arr){return arr.filter(function(v,k){return arr.indexOf(v)===k;});}
 function load(){
@@ -454,8 +465,8 @@ function base(){return order.filter(function(no){return inSel(no)&&!mem.has(no);
 function active(){var b=base();return hardOnly?b.filter(function(no){return stars.has(no)||!!flash[no];}):b;}
 function hlOn(no){return hideStars?!!(flash[no]&&flash[no].on):stars.has(no);}
 var STAR=function(on){return '<svg viewBox="0 0 24 24" fill="'+(on?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.9z"/></svg>';};
-function starCell(no,n,force){
-if(hideStars&&!force){
+function starCell(no,n){
+if(hideStars){
 if(n===null)return '';
 var f=flash[no];
 return '<button class="st" type="button" data-star="'+no+'" aria-label="어려운 단어 표시 변경">'+(f?STAR(f.on):n)+'</button>';
@@ -532,13 +543,14 @@ btnMore.textContent=moreOpen?"더보기 닫기":"더보기";
 btnMore.setAttribute("aria-expanded",moreOpen?"true":"false");
 morePanel.style.display=moreOpen?"grid":"none";
 var list=order.filter(function(no){return mem.has(no)&&inSel(no);});
+if(hardOnly)list=list.filter(function(no){return stars.has(no)||!!flash[no];});
 btnMem.textContent=memOpen?"외운 단어 닫기":"외운 단어 보기 ("+list.length+")";
 document.getElementById("memPanel").style.display=memOpen?"block":"none";
 memBody.innerHTML=list.length?list.map(function(no){
 var d=byNo[no];
-return '<tr'+(stars.has(no)?' class="hl"':'')+'><td class="stc">'+starCell(no,null,true)+'</td><td class="memw"><button class="gw" type="button" data-no="'+no+'">'+d[2]+'</button>'+(pron.has(no)?'<span class="pr">'+d[4]+'</span>':'')+'</td><td class="memm">'+d[3]+'</td>'+
+return '<tr'+(hlOn(no)?' class="hl"':'')+'><td class="stc">'+starCell(no,null)+'</td><td class="memw"><button class="gw" type="button" data-no="'+no+'">'+d[2]+'</button>'+(pron.has(no)?'<span class="pr">'+d[4]+'</span>':'')+'</td><td class="memm">'+d[3]+'</td>'+
 '<td class="right"><button class="undo" type="button" data-undo="'+no+'">되돌리기</button></td></tr>';
-}).join(""):'<tr><td colspan="4" class="memm" style="padding:12px 8px">아직 없습니다.</td></tr>';
+}).join(""):'<tr><td colspan="4" class="memm" style="padding:12px 8px">'+(hardOnly?"별표한 외운 단어가 없습니다.":"아직 없습니다.")+'</td></tr>';
 var starList=starOrder.filter(function(no){return stars.has(no);});
 btnStar.textContent="별표 단어장 보기 ("+starList.length+")";
 document.getElementById("starPage").style.display=starOpen?"block":"none";
@@ -828,8 +840,20 @@ render();
 qInput.addEventListener("input",runSearch);
 qInput.addEventListener("focus",function(){document.body.classList.add("typing");});
 qInput.addEventListener("blur",function(){document.body.classList.remove("typing");});
+var btnScroll=document.getElementById("scrollToggle");
+function updateScrollBtn(){
+var atBottom=(window.innerHeight+window.scrollY)>=(document.documentElement.scrollHeight-40);
+btnScroll.innerHTML=atBottom?ARROW_UP:ARROW_DOWN;
+btnScroll.setAttribute("aria-label",atBottom?"맨 위로 이동":"맨 아래로 이동");
+}
+btnScroll.addEventListener("click",function(){
+var atBottom=(window.innerHeight+window.scrollY)>=(document.documentElement.scrollHeight-40);
+window.scrollTo({top:atBottom?0:document.documentElement.scrollHeight,behavior:"smooth"});
+});
+window.addEventListener("scroll",updateScrollBtn,{passive:true});
 load();
 render();
+updateScrollBtn();
 </script>
 </body>
 </html>
