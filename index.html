@@ -83,23 +83,30 @@ tr.hl td{background:var(--hl)}
 #scrollToggle{position:fixed;left:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:11;width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;color:var(--ink2);background:var(--surface);border:1px solid var(--line2);border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.15);cursor:pointer}
 #scrollToggle svg{width:20px;height:20px}
 .typing #scrollToggle,.starmode #scrollToggle{display:none}
-@media (min-width:720px){
-body{background:var(--line)}
-.wrap{max-width:720px;padding:32px 32px 150px;background:var(--bg)}
-#starPage .wrap{background:var(--bg)}
-.dock{background:var(--line)}
-.dock .in{max-width:720px;background:var(--bg);padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));border-radius:8px 8px 0 0}
-h1{font-size:24px}
+@media (min-width:860px){
+.wrap{max-width:680px;padding:40px 32px 60px}
+h1{font-size:26px}
 .sub{font-size:14px}
-.chips{grid-template-columns:repeat(7,minmax(0,1fr))}
-.gr{font-size:22px}
-#scrollToggle{left:calc(50% - 360px - 60px)}
-}
-@media (min-width:1040px){
-.wrap{max-width:860px}
-.dock .in{max-width:860px}
-.chips{grid-template-columns:repeat(9,minmax(0,1fr))}
-#scrollToggle{left:calc(50% - 430px - 60px)}
+h2.sec{font-size:15px}
+.chips{grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+.chip{min-height:36px;font-size:13px}
+.chip small{font-size:10px}
+.btn{min-height:38px;font-size:13px}
+.sw{gap:6px}
+.gr{font-size:30px;padding-top:14px;padding-bottom:14px}
+.mn{font-size:19px}
+.mn.hid{font-size:14px}
+.pr{font-size:14px}
+td{padding:8px 10px}
+.ck{width:38px;height:38px}
+.ck svg{width:18px;height:18px}
+.st{min-height:38px}
+.st svg{width:18px;height:18px}
+#scrollToggle{display:none}
+.dock{position:static;border-top:0;background:transparent;padding:28px 0 0}
+.dock .in{max-width:680px;margin:0}
+.dock .cap{display:none}
+.dock .btns{max-width:280px;margin-left:auto}
 }
 </style>
 <script data-goatcounter="https://greek-vocab.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
@@ -427,7 +434,8 @@ var starOpen=false;
 // v1.4.1 (2026-09-29) - 스크롤 토글 버튼을 화면 오른쪽에서 왼쪽으로 이동
 // v1.5.0 (2026-10-02) - GoatCounter 방문자 통계 스크립트 추가 (관리자만 goatcounter.com 로그인으로 확인, 사용자 경험에는 영향 없음)
 // v1.6.0 (2026-10-05) - 데스크톱 화면(720px, 1040px 이상)에서 본문 폭/글자 크기/과 선택 칩 열 수가 넓어지도록 반응형 레이아웃 추가. 모바일 레이아웃은 그대로 유지
-var VERSION="v1.6.0";
+// v1.7.0 (2026-10-05) - 데스크톱(860px 이상) 레이아웃을 '모바일 늘리기'에서 재설계: 폭은 680px로 절제하고 대신 헬라어·뜻 글자와 행 간격을 크게 키움. 모바일 전용 요소(하단 고정 체크 취소/다시 체크 바, 큰 터치 버튼, 스크롤 토글 버튼)는 데스크톱에서 제거/축소하고, 체크 취소/다시 체크는 본문 하단에 작은 버튼으로 이동. 모바일 레이아웃은 그대로 유지
+var VERSION="v1.7.0";
 var stars=new Set();
 var hardOnly=false;
 var hideStars=false;
