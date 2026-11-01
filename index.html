@@ -20,7 +20,7 @@ h2.sec{font-size:14px;font-weight:500;margin:0 0 8px}
 .bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin:0 0 8px}
 .bar i{display:block;height:100%;width:0;background:var(--accent)}
 .stat{font-size:13px;color:var(--ink2);margin:0 0 16px}
-.chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 8px;touch-action:none}
+.chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 8px}
 .chip{min-height:48px;padding:4px 2px;font:inherit;font-size:14px;line-height:1.3;color:var(--ink);background:var(--surface);border:1px solid var(--line2);border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .chip small{font-size:11px;color:var(--ink3)}
 .chip.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
@@ -438,7 +438,8 @@ var starOpen=false;
 // v1.7.0 (2026-10-05) - 데스크톱(860px 이상) 레이아웃을 '모바일 늘리기'에서 재설계: 폭은 680px로 절제하고 대신 헬라어·뜻 글자와 행 간격을 크게 키움. 모바일 전용 요소(하단 고정 체크 취소/다시 체크 바, 큰 터치 버튼, 스크롤 토글 버튼)는 데스크톱에서 제거/축소하고, 체크 취소/다시 체크는 본문 하단에 작은 버튼으로 이동. 모바일 레이아웃은 그대로 유지
 // v1.8.0 (2026-10-17) - 10과에 ἄρχομαι(내가 시작하다, 중간태) 표제어를 ἄρχω 바로 뒤(95번)에 추가. 이후 모든 단어 번호가 1씩 밀림(95~213 -> 96~214, 총 214개). 기존에 저장된 외운 단어/별표/체크 기록은 최초 접속 시 번호를 자동으로 1씩 보정하는 마이그레이션(mig95)을 거쳐 그대로 유지됨(섞기 순서만 기본값으로 재설정)
 // v1.8.1 (2026-11-02) - 현재시제 디포넌트 동사 13개(10과 7, 12과 5, 18과 1)의 뜻에 "(디포)" 표기 통일. ἄρχομαι는 디포가 아니라 "(중간태)" 유지, 16과 수동태 표기와 13과 미래 중간태는 변경 없음. 번호 변동 없음
-var VERSION="v1.8.1";
+// v1.9.0 (2026-11-02) - 과 선택 칩의 드래그 선택 기능 제거, 한 칸씩 탭하는 방식으로 복귀 (드래그용 스크롤 차단 touch-action 해제로 칩 위에서도 화면 스크롤 가능)
+var VERSION="v1.9.0";
 var stars=new Set();
 var hardOnly=false;
 var hideStars=false;
@@ -610,42 +611,14 @@ var no=Number(tr.getAttribute("data-i"));
 if(shown.has(no))shown.delete(no);else shown.add(no);
 render();
 }
-var chipDrag=false;
-var chipDragTarget=null;
-var chipOrigSel=null;
-var chipStartIdx=null;
-function chipApplyRange(idx){
-var lo=Math.min(chipStartIdx,idx),hi=Math.max(chipStartIdx,idx);
-lessons.forEach(function(l,i){
-if(i>=lo&&i<=hi){if(chipDragTarget)sel.add(l);else sel.delete(l);}
-else{if(chipOrigSel.has(l))sel.add(l);else sel.delete(l);}
-});
-save();
-render();
-}
-chips.addEventListener("pointerdown",function(e){
+chips.addEventListener("click",function(e){
 var c=e.target.closest("[data-l]");
 if(!c)return;
-chipDrag=true;
-chipOrigSel=new Set(sel);
 var l=Number(c.getAttribute("data-l"));
-chipStartIdx=lessons.indexOf(l);
-chipDragTarget=!sel.has(l);
-chipApplyRange(chipStartIdx);
-try{chips.setPointerCapture(e.pointerId);}catch(err){}
+if(sel.has(l))sel.delete(l);else sel.add(l);
+save();
+render();
 });
-chips.addEventListener("pointermove",function(e){
-if(!chipDrag)return;
-var el=document.elementFromPoint(e.clientX,e.clientY);
-var c=el&&el.closest?el.closest("[data-l]"):null;
-if(!c)return;
-var idx=lessons.indexOf(Number(c.getAttribute("data-l")));
-if(idx<0)return;
-chipApplyRange(idx);
-});
-function chipEndDrag(){chipDrag=false;}
-chips.addEventListener("pointerup",chipEndDrag);
-chips.addEventListener("pointercancel",chipEndDrag);
 document.getElementById("selAll").addEventListener("click",function(){sel=new Set(lessons);save();render();});
 document.getElementById("selNone").addEventListener("click",function(){sel=new Set();save();render();});
 function toggleStar(no){
